@@ -3,25 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centered Text</title>
-    <style>
-        /* CSS to center text */
-        body {
-            margin: 0;
-            height: 100vh; /* Full screen height */
-            display: flex; /* Enables flexbox */
-            justify-content: center; /* Centers horizontally */
-            align-items: center; /* Centers vertically */
-            background-color: #f0f0f0; /* Optional: background color */
-        }
-
-        h1 {
-            font-size: 3em;
-            color: #333;
-        }
-    </style>
+    <title>My Website</title>
 </head>
 <body>
-    <h1>Balls</h1>
+    <h1>Welcome to My Website!</h1>
+    <button id="myButton">Click Me</button>
+    <p id="message"></p>
+
+    <script>
+        document.getElementById("myButton").addEventListener("click", function() {
+            document.getElementById("message").innerText = "Hello from JavaScript!";
+        });
+    </script>
 </body>
 </html>

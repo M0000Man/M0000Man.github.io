@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Aim Trainer</title>
+    <title>3D FPS Game</title>
     <style>
         body {
             margin: 0;
@@ -17,111 +17,93 @@
 </head>
 <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PointerLockControls/2.3.7/PointerLockControls.min.js"></script>
     <script>
-        // Set up the scene, camera, and renderer
+        // Setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Add a light to the scene
+        // Pointer lock controls
+        const controls = new THREE.PointerLockControls(camera, document.body);
+        document.body.addEventListener('click', () => controls.lock());
+
+        controls.addEventListener('lock', () => console.log('Pointer locked.')); // Optional logging
+        controls.addEventListener('unlock', () => console.log('Pointer unlocked.'));
+
+        // Light
         const light = new THREE.PointLight(0xffffff, 1, 100);
         light.position.set(10, 10, 10);
         scene.add(light);
 
-        // Create the target sphere
-        const geometry = new THREE.SphereGeometry(0.5, 32, 32);
-        const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-        const target = new THREE.Mesh(geometry, material);
-        scene.add(target);
+        // Floor
+        const floorGeometry = new THREE.PlaneGeometry(50, 50);
+        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x444444 });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
 
-        // Add a plane for reference
-        const planeGeometry = new THREE.PlaneGeometry(20, 20);
-        const planeMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, side: THREE.DoubleSide });
-        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-        plane.rotation.x = Math.PI / 2;
-        scene.add(plane);
+        // Enemies
+        const enemyGeometry = new THREE.BoxGeometry(1, 1, 1);
+        const enemyMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        const enemies = [];
 
-        // Set the camera position
-        camera.position.z = 5;
-
-        // Score and timer
-        let score = 0;
-        let timeLeft = 30;
-
-        const scoreDisplay = document.createElement('div');
-        scoreDisplay.style.position = 'absolute';
-        scoreDisplay.style.top = '10px';
-        scoreDisplay.style.left = '10px';
-        scoreDisplay.style.color = 'white';
-        scoreDisplay.style.fontSize = '20px';
-        scoreDisplay.textContent = `Score: ${score}`;
-        document.body.appendChild(scoreDisplay);
-
-        const timerDisplay = document.createElement('div');
-        timerDisplay.style.position = 'absolute';
-        timerDisplay.style.top = '40px';
-        timerDisplay.style.left = '10px';
-        timerDisplay.style.color = 'white';
-        timerDisplay.style.fontSize = '20px';
-        timerDisplay.textContent = `Time Left: ${timeLeft}s`;
-        document.body.appendChild(timerDisplay);
-
-        function moveTarget() {
-            const x = (Math.random() - 0.5) * 10;
-            const y = Math.random() * 5;
-            const z = (Math.random() - 0.5) * 10;
-
-            target.position.set(x, y, z);
+        function createEnemy() {
+            const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+            enemy.position.set((Math.random() - 0.5) * 20, 0.5, (Math.random() - 0.5) * 20);
+            scene.add(enemy);
+            enemies.push(enemy);
         }
 
-        // Game logic
-        function startGame() {
-            score = 0;
-            timeLeft = 30;
-            scoreDisplay.textContent = `Score: ${score}`;
-            timerDisplay.textContent = `Time Left: ${timeLeft}s`;
-
-            moveTarget();
-
-            const gameInterval = setInterval(() => {
-                timeLeft--;
-                timerDisplay.textContent = `Time Left: ${timeLeft}s`;
-
-                if (timeLeft <= 0) {
-                    clearInterval(gameInterval);
-                    alert(`Game Over! Your score: ${score}`);
-                }
-            }, 1000);
-
-            renderer.domElement.addEventListener('click', (event) => {
-                const mouse = new THREE.Vector2(
-                    (event.clientX / window.innerWidth) * 2 - 1,
-                    -(event.clientY / window.innerHeight) * 2 + 1
-                );
-
-                const raycaster = new THREE.Raycaster();
-                raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObject(target);
-
-                if (intersects.length > 0) {
-                    score++;
-                    scoreDisplay.textContent = `Score: ${score}`;
-                    moveTarget();
-                }
-            });
+        for (let i = 0; i < 5; i++) {
+            createEnemy();
         }
 
-        // Render loop
+        // Camera position
+        camera.position.y = 1.5;
+
+        // Player movement
+        const keys = {};
+
+        window.addEventListener('keydown', (event) => keys[event.key] = true);
+        window.addEventListener('keyup', (event) => keys[event.key] = false);
+
+        const speed = 0.1;
+
+        function movePlayer() {
+            if (keys['w']) controls.moveForward(speed);
+            if (keys['s']) controls.moveForward(-speed);
+            if (keys['a']) controls.moveRight(-speed);
+            if (keys['d']) controls.moveRight(speed);
+        }
+
+        // Shooting
+        const raycaster = new THREE.Raycaster();
+
+        document.body.addEventListener('click', () => {
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            const intersects = raycaster.intersectObjects(enemies);
+
+            if (intersects.length > 0) {
+                const enemy = intersects[0].object;
+                scene.remove(enemy);
+                const index = enemies.indexOf(enemy);
+                if (index > -1) enemies.splice(index, 1);
+            }
+        });
+
+        // Game loop
         function animate() {
             requestAnimationFrame(animate);
+
+            movePlayer();
+
             renderer.render(scene, camera);
         }
 
-        startGame();
         animate();
-
     </script>
 </body>
 </html>

@@ -3,99 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aim Trainer</title>
+    <title>3D Aim Trainer</title>
     <style>
         body {
             margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #1a1a1a;
-            color: white;
-            font-family: Arial, sans-serif;
+            overflow: hidden;
         }
 
-        #game-area {
-            position: relative;
-            width: 800px;
-            height: 600px;
-            border: 2px solid white;
-            background-color: #333;
-        }
-
-        .target {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            background-color: red;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-        #scoreboard {
-            margin-top: 20px;
-            text-align: center;
+        canvas {
+            display: block;
         }
     </style>
 </head>
 <body>
-    <div id="game-area"></div>
-    <div id="scoreboard">
-        <p>Score: <span id="score">0</span></p>
-        <p>Time Left: <span id="time-left">30</span> seconds</p>
-    </div>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
     <script>
-        const gameArea = document.getElementById('game-area');
-        const scoreElement = document.getElementById('score');
-        const timeLeftElement = document.getElementById('time-left');
+        // Set up the scene, camera, and renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
+        // Add a light to the scene
+        const light = new THREE.PointLight(0xffffff, 1, 100);
+        light.position.set(10, 10, 10);
+        scene.add(light);
+
+        // Create the target sphere
+        const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+        const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        const target = new THREE.Mesh(geometry, material);
+        scene.add(target);
+
+        // Add a plane for reference
+        const planeGeometry = new THREE.PlaneGeometry(20, 20);
+        const planeMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, side: THREE.DoubleSide });
+        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.rotation.x = Math.PI / 2;
+        scene.add(plane);
+
+        // Set the camera position
+        camera.position.z = 5;
+
+        // Score and timer
         let score = 0;
         let timeLeft = 30;
-        let gameInterval;
 
-        function createTarget() {
-            const target = document.createElement('div');
-            target.classList.add('target');
+        const scoreDisplay = document.createElement('div');
+        scoreDisplay.style.position = 'absolute';
+        scoreDisplay.style.top = '10px';
+        scoreDisplay.style.left = '10px';
+        scoreDisplay.style.color = 'white';
+        scoreDisplay.style.fontSize = '20px';
+        scoreDisplay.textContent = `Score: ${score}`;
+        document.body.appendChild(scoreDisplay);
 
-            const x = Math.random() * (gameArea.offsetWidth - 50);
-            const y = Math.random() * (gameArea.offsetHeight - 50);
+        const timerDisplay = document.createElement('div');
+        timerDisplay.style.position = 'absolute';
+        timerDisplay.style.top = '40px';
+        timerDisplay.style.left = '10px';
+        timerDisplay.style.color = 'white';
+        timerDisplay.style.fontSize = '20px';
+        timerDisplay.textContent = `Time Left: ${timeLeft}s`;
+        document.body.appendChild(timerDisplay);
 
-            target.style.left = `${x}px`;
-            target.style.top = `${y}px`;
+        function moveTarget() {
+            const x = (Math.random() - 0.5) * 10;
+            const y = Math.random() * 5;
+            const z = (Math.random() - 0.5) * 10;
 
-            target.addEventListener('click', () => {
-                score++;
-                scoreElement.textContent = score;
-                target.remove();
-                createTarget();
-            });
-
-            gameArea.appendChild(target);
+            target.position.set(x, y, z);
         }
 
+        // Game logic
         function startGame() {
             score = 0;
             timeLeft = 30;
-            scoreElement.textContent = score;
-            timeLeftElement.textContent = timeLeft;
+            scoreDisplay.textContent = `Score: ${score}`;
+            timerDisplay.textContent = `Time Left: ${timeLeft}s`;
 
-            gameArea.innerHTML = '';
-            createTarget();
+            moveTarget();
 
-            gameInterval = setInterval(() => {
+            const gameInterval = setInterval(() => {
                 timeLeft--;
-                timeLeftElement.textContent = timeLeft;
+                timerDisplay.textContent = `Time Left: ${timeLeft}s`;
 
                 if (timeLeft <= 0) {
                     clearInterval(gameInterval);
-                    gameArea.innerHTML = '<p style="color: white; font-size: 24px; text-align: center;">Game Over! Your score: ' + score + '</p>';
+                    alert(`Game Over! Your score: ${score}`);
                 }
             }, 1000);
+
+            renderer.domElement.addEventListener('click', (event) => {
+                const mouse = new THREE.Vector2(
+                    (event.clientX / window.innerWidth) * 2 - 1,
+                    -(event.clientY / window.innerHeight) * 2 + 1
+                );
+
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(target);
+
+                if (intersects.length > 0) {
+                    score++;
+                    scoreDisplay.textContent = `Score: ${score}`;
+                    moveTarget();
+                }
+            });
+        }
+
+        // Render loop
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
         }
 
         startGame();
+        animate();
+
     </script>
 </body>
 </html>

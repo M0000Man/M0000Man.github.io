@@ -33,14 +33,17 @@
         controls.addEventListener('lock', () => console.log('Pointer locked.')); // Optional logging
         controls.addEventListener('unlock', () => console.log('Pointer unlocked.'));
 
-        // Light
-        const light = new THREE.PointLight(0xffffff, 1, 100);
-        light.position.set(10, 10, 10);
-        scene.add(light);
+        // Lights
+        const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+        pointLight.position.set(10, 10, 10);
+        scene.add(pointLight);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Add ambient light
+        scene.add(ambientLight);
 
         // Floor
         const floorGeometry = new THREE.PlaneGeometry(50, 50);
-        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x444444 });
+        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
         const floor = new THREE.Mesh(floorGeometry, floorMaterial);
         floor.rotation.x = -Math.PI / 2;
         scene.add(floor);
@@ -62,7 +65,7 @@
         }
 
         // Camera position
-        camera.position.y = 1.5;
+        camera.position.set(0, 2, 5); // Adjusted to be above the floor and facing forward
 
         // Player movement
         const keys = {};

@@ -3,131 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pong Game</title>
+    <title>Aim Trainer</title>
     <style>
-        /* Style for the game canvas */
         body {
             margin: 0;
-            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: black;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
         }
-        canvas {
-            background-color: #222;
-            display: block;
+
+        #game-area {
+            position: relative;
+            width: 800px;
+            height: 600px;
             border: 2px solid white;
+            background-color: #333;
+        }
+
+        .target {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: red;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        #scoreboard {
+            margin-top: 20px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <canvas id="pong" width="800" height="400"></canvas>
+    <div id="game-area"></div>
+    <div id="scoreboard">
+        <p>Score: <span id="score">0</span></p>
+        <p>Time Left: <span id="time-left">30</span> seconds</p>
+    </div>
 
     <script>
-        const canvas = document.getElementById("pong");
-        const ctx = canvas.getContext("2d");
+        const gameArea = document.getElementById('game-area');
+        const scoreElement = document.getElementById('score');
+        const timeLeftElement = document.getElementById('time-left');
 
-        // Paddle and ball properties
-        const paddleWidth = 10, paddleHeight = 100;
-        const ballSize = 10;
+        let score = 0;
+        let timeLeft = 30;
+        let gameInterval;
 
-        // Player paddles
-        const player1 = { x: 0, y: canvas.height / 2 - paddleHeight / 2, dy: 0 };
-        const player2 = { x: canvas.width - paddleWidth, y: canvas.height / 2 - paddleHeight / 2, dy: 4 };
+        function createTarget() {
+            const target = document.createElement('div');
+            target.classList.add('target');
 
-        // Ball properties
-        const ball = { x: canvas.width / 2, y: canvas.height / 2, dx: 4, dy: 4 };
+            const x = Math.random() * (gameArea.offsetWidth - 50);
+            const y = Math.random() * (gameArea.offsetHeight - 50);
 
-        // Key press states
-        const keys = {};
+            target.style.left = `${x}px`;
+            target.style.top = `${y}px`;
 
-        // Draw a rectangle
-        function drawRect(x, y, width, height, color) {
-            ctx.fillStyle = color;
-            ctx.fillRect(x, y, width, height);
+            target.addEventListener('click', () => {
+                score++;
+                scoreElement.textContent = score;
+                target.remove();
+                createTarget();
+            });
+
+            gameArea.appendChild(target);
         }
 
-        // Draw the ball
-        function drawBall(x, y, size, color) {
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(x, y, size, 0, Math.PI * 2);
-            ctx.fill();
+        function startGame() {
+            score = 0;
+            timeLeft = 30;
+            scoreElement.textContent = score;
+            timeLeftElement.textContent = timeLeft;
+
+            gameArea.innerHTML = '';
+            createTarget();
+
+            gameInterval = setInterval(() => {
+                timeLeft--;
+                timeLeftElement.textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(gameInterval);
+                    gameArea.innerHTML = '<p style="color: white; font-size: 24px; text-align: center;">Game Over! Your score: ' + score + '</p>';
+                }
+            }, 1000);
         }
 
-        // Move paddles
-        function movePaddles() {
-            if (keys["ArrowUp"] && player1.y > 0) player1.y -= 6;
-            if (keys["ArrowDown"] && player1.y < canvas.height - paddleHeight) player1.y += 6;
-
-            // Simple AI for player2
-            if (ball.y > player2.y + paddleHeight / 2) player2.y += player2.dy;
-            if (ball.y < player2.y + paddleHeight / 2) player2.y -= player2.dy;
-
-            // Prevent AI paddle from going out of bounds
-            if (player2.y < 0) player2.y = 0;
-            if (player2.y > canvas.height - paddleHeight) player2.y = canvas.height - paddleHeight;
-        }
-
-        // Move the ball
-        function moveBall() {
-            ball.x += ball.dx;
-            ball.y += ball.dy;
-
-            // Ball collision with top and bottom walls
-            if (ball.y < ballSize || ball.y > canvas.height - ballSize) {
-                ball.dy *= -1;
-            }
-
-            // Ball collision with paddles
-            if (
-                ball.x - ballSize < player1.x + paddleWidth &&
-                ball.y > player1.y &&
-                ball.y < player1.y + paddleHeight
-            ) {
-                ball.dx *= -1; // Reverse ball direction
-            }
-
-            if (
-                ball.x + ballSize > player2.x &&
-                ball.y > player2.y &&
-                ball.y < player2.y + paddleHeight
-            ) {
-                ball.dx *= -1; // Reverse ball direction
-            }
-
-            // Ball reset if it goes out of bounds
-            if (ball.x < 0 || ball.x > canvas.width) {
-                ball.x = canvas.width / 2;
-                ball.y = canvas.height / 2;
-                ball.dx *= -1; // Reverse direction to reset
-            }
-        }
-
-        // Main game loop
-        function update() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
-
-            // Move paddles and ball
-            movePaddles();
-            moveBall();
-
-            // Draw paddles and ball
-            drawRect(player1.x, player1.y, paddleWidth, paddleHeight, "white");
-            drawRect(player2.x, player2.y, paddleWidth, paddleHeight, "white");
-            drawBall(ball.x, ball.y, ballSize, "white");
-
-            requestAnimationFrame(update); // Recursive loop
-        }
-
-        // Event listeners for key presses
-        window.addEventListener("keydown", (e) => keys[e.key] = true);
-        window.addEventListener("keyup", (e) => keys[e.key] = false);
-
-        // Start the game
-        update();
+        startGame();
     </script>
 </body>
 </html>

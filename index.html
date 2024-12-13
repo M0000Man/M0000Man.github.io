@@ -9,14 +9,37 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
+            height: 100%;
         }
+
         canvas {
             display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="overlay"></div>
+    </div>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const gl = canvas.getContext('webgl2');
@@ -26,8 +49,14 @@
             throw new Error('WebGL2 is required to run this application.');
         }
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        // Resize canvas to fit the container
+        function resizeCanvas() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
         // Vertex shader source
         const vertexShaderSource = `#version 300 es

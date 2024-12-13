@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base 3D First-Person Game</title>
+    <title>3D Third-Person Game</title>
     <style>
         body, html {
             margin: 0;
             padding: 0;
             overflow: hidden;
             height: 100%;
+            background: skyblue;
         }
 
         canvas {
@@ -17,212 +18,76 @@
             width: 100%;
             height: 100%;
         }
-
-        #gameContainer {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-
-        #overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            background: rgba(0, 0, 0, 0.1);
-        }
     </style>
 </head>
 <body>
-    <div id="gameContainer">
-        <canvas id="gameCanvas"></canvas>
-        <div id="overlay"></div>
-    </div>
+    <canvas id="gameCanvas"></canvas>
     <script>
         const canvas = document.getElementById('gameCanvas');
-        const gl = canvas.getContext('webgl2');
+        const ctx = canvas.getContext('2d');
 
-        if (!gl) {
-            alert('WebGL2 is not supported by your browser!');
-            throw new Error('WebGL2 is required to run this application.');
-        }
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-        // Resize canvas to fit the container
-        function resizeCanvas() {
-            canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight;
-        }
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            size: 50,
+            color: 'red',
+            speed: 5,
+        };
 
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        const keys = {
+            ArrowUp: false,
+            ArrowDown: false,
+            ArrowLeft: false,
+            ArrowRight: false,
+        };
 
-        // Vertex shader source
-        const vertexShaderSource = `#version 300 es
-        precision mediump float;
-        layout(location = 0) in vec3 position;
-        uniform mat4 projectionMatrix;
-        uniform mat4 viewMatrix;
-        uniform mat4 modelMatrix;
-        void main() {
-            gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
-        }
-        `;
-
-        // Fragment shader source
-        const fragmentShaderSource = `#version 300 es
-        precision mediump float;
-        uniform vec4 uColor;
-        out vec4 color;
-        void main() {
-            color = uColor;
-        }
-        `;
-
-        function createShader(gl, type, source) {
-            const shader = gl.createShader(type);
-            gl.shaderSource(shader, source);
-            gl.compileShader(shader);
-            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                console.error('Shader compile error:', gl.getShaderInfoLog(shader));
-                gl.deleteShader(shader);
-                return null;
-            }
-            return shader;
-        }
-
-        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-
-        const program = gl.createProgram();
-        gl.attachShader(program, vertexShader);
-        gl.attachShader(program, fragmentShader);
-        gl.linkProgram(program);
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            console.error('Program link error:', gl.getProgramInfoLog(program));
-            gl.deleteProgram(program);
-            return;
-        }
-
-        gl.useProgram(program);
-
-        // Define a simple cube and a floor
-        const vertices = new Float32Array([
-            // Cube (table top)
-            -0.5, -0.5,  0.5,
-             0.5, -0.5,  0.5,
-             0.5,  0.0,  0.5,
-            -0.5,  0.0,  0.5,
-            -0.5, -0.5, -0.5,
-             0.5, -0.5, -0.5,
-             0.5,  0.0, -0.5,
-            -0.5,  0.0, -0.5,
-            // Floor
-            -5.0, -1.0, -5.0,
-             5.0, -1.0, -5.0,
-             5.0, -1.0,  5.0,
-            -5.0, -1.0,  5.0
-        ]);
-
-        const indices = new Uint16Array([
-            // Cube
-            0, 1, 2,  2, 3, 0,
-            4, 5, 6,  6, 7, 4,
-            3, 2, 6,  6, 7, 3,
-            0, 1, 5,  5, 4, 0,
-            1, 2, 6,  6, 5, 1,
-            0, 3, 7,  7, 4, 0,
-            // Floor
-            8, 9, 10, 10, 11, 8
-        ]);
-
-        const vertexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-        const indexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
-
-        const positionAttribLocation = gl.getAttribLocation(program, 'position');
-        gl.enableVertexAttribArray(positionAttribLocation);
-        gl.vertexAttribPointer(positionAttribLocation, 3, gl.FLOAT, false, 0, 0);
-
-        const projectionMatrixLocation = gl.getUniformLocation(program, 'projectionMatrix');
-        const viewMatrixLocation = gl.getUniformLocation(program, 'viewMatrix');
-        const modelMatrixLocation = gl.getUniformLocation(program, 'modelMatrix');
-        const colorUniformLocation = gl.getUniformLocation(program, 'uColor');
-
-        const projectionMatrix = mat4.create();
-        mat4.perspective(projectionMatrix, Math.PI / 4, canvas.width / canvas.height, 0.1, 100.0);
-
-        const viewMatrix = mat4.create();
-        mat4.translate(viewMatrix, viewMatrix, [0, 0, -6]);
-
-        const cubeModelMatrix = mat4.create();
-        mat4.translate(cubeModelMatrix, cubeModelMatrix, [0, -0.5, 0]);
-
-        const floorModelMatrix = mat4.create();
-
-        // Mouse control variables
-        let yaw = 0;
-        let pitch = 0;
-        let isPointerLocked = false;
-
-        function updateViewMatrix() {
-            mat4.identity(viewMatrix);
-            mat4.rotateX(viewMatrix, viewMatrix, pitch);
-            mat4.rotateY(viewMatrix, viewMatrix, yaw);
-            mat4.translate(viewMatrix, viewMatrix, [0, 0, -6]);
-        }
-
-        document.addEventListener('click', () => {
-            canvas.requestPointerLock();
-        });
-
-        document.addEventListener('pointerlockchange', () => {
-            isPointerLocked = document.pointerLockElement === canvas;
-        });
-
-        document.addEventListener('mousemove', (event) => {
-            if (isPointerLocked) {
-                const sensitivity = 0.002;
-                yaw += event.movementX * sensitivity;
-                pitch -= event.movementY * sensitivity;
-
-                // Clamp pitch to avoid flipping
-                const maxPitch = Math.PI / 2 - 0.1;
-                pitch = Math.max(-maxPitch, Math.min(maxPitch, pitch));
-
-                updateViewMatrix();
+        window.addEventListener('keydown', (e) => {
+            if (keys.hasOwnProperty(e.key)) {
+                keys[e.key] = true;
             }
         });
 
-        function render() {
-            gl.clearColor(0.1, 0.1, 0.1, 1.0);
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            gl.enable(gl.DEPTH_TEST);
+        window.addEventListener('keyup', (e) => {
+            if (keys.hasOwnProperty(e.key)) {
+                keys[e.key] = false;
+            }
+        });
 
-            gl.uniformMatrix4fv(projectionMatrixLocation, false, projectionMatrix);
-            gl.uniformMatrix4fv(viewMatrixLocation, false, viewMatrix);
-
-            // Render the floor
-            gl.uniformMatrix4fv(modelMatrixLocation, false, floorModelMatrix);
-            gl.uniform4f(colorUniformLocation, 0.8, 0.1, 0.1, 1.0); // Red floor
-            gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 12 * 2);
-
-            // Render the cube (table)
-            gl.uniformMatrix4fv(modelMatrixLocation, false, cubeModelMatrix);
-            gl.uniform4f(colorUniformLocation, 0.5, 0.5, 0.5, 1.0); // Gray table
-            gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
-
-            requestAnimationFrame(render);
+        function update() {
+            if (keys.ArrowUp) player.y -= player.speed;
+            if (keys.ArrowDown) player.y += player.speed;
+            if (keys.ArrowLeft) player.x -= player.speed;
+            if (keys.ArrowRight) player.x += player.speed;
         }
 
-        updateViewMatrix();
-        render();
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw floor
+            ctx.fillStyle = 'darkgray';
+            ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
+
+            // Draw player (red cube)
+            ctx.fillStyle = player.color;
+            ctx.fillRect(
+                player.x - player.size / 2,
+                player.y - player.size / 2,
+                player.size,
+                player.size
+            );
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/gl-matrix@2.8.1/dist/gl-matrix-min.js"></script>
 </body>
 </html>

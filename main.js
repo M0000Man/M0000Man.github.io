@@ -24,8 +24,9 @@ function animate() {
     requestAnimationFrame(animate);
     cube.rotation.x += 0.01; // Rotate the cube for visibility
     cube.rotation.y += 0.01;
+    renderer.setClearColor(0x000000); // Set background to black
     renderer.render(scene, camera);
-}
+    }
 animate();
 
 // Handle Window Resize

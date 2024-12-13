@@ -44,9 +44,10 @@
         // Fragment shader source
         const fragmentShaderSource = `#version 300 es
         precision mediump float;
+        uniform vec4 uColor;
         out vec4 color;
         void main() {
-            color = vec4(0.8, 0.3, 0.3, 1.0);
+            color = uColor;
         }
         `;
 
@@ -79,15 +80,15 @@
 
         // Define a simple cube and a floor
         const vertices = new Float32Array([
-            // Cube
+            // Cube (table top)
             -0.5, -0.5,  0.5,
              0.5, -0.5,  0.5,
-             0.5,  0.5,  0.5,
-            -0.5,  0.5,  0.5,
+             0.5,  0.0,  0.5,
+            -0.5,  0.0,  0.5,
             -0.5, -0.5, -0.5,
              0.5, -0.5, -0.5,
-             0.5,  0.5, -0.5,
-            -0.5,  0.5, -0.5,
+             0.5,  0.0, -0.5,
+            -0.5,  0.0, -0.5,
             // Floor
             -5.0, -1.0, -5.0,
              5.0, -1.0, -5.0,
@@ -122,6 +123,7 @@
         const projectionMatrixLocation = gl.getUniformLocation(program, 'projectionMatrix');
         const viewMatrixLocation = gl.getUniformLocation(program, 'viewMatrix');
         const modelMatrixLocation = gl.getUniformLocation(program, 'modelMatrix');
+        const colorUniformLocation = gl.getUniformLocation(program, 'uColor');
 
         const projectionMatrix = mat4.create();
         mat4.perspective(projectionMatrix, Math.PI / 4, canvas.width / canvas.height, 0.1, 100.0);
@@ -130,21 +132,26 @@
         mat4.translate(viewMatrix, viewMatrix, [0, 0, -6]);
 
         const cubeModelMatrix = mat4.create();
+        mat4.translate(cubeModelMatrix, cubeModelMatrix, [0, -0.5, 0]);
+
         const floorModelMatrix = mat4.create();
 
         function render() {
             gl.clearColor(0.1, 0.1, 0.1, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.enable(gl.DEPTH_TEST);
 
             gl.uniformMatrix4fv(projectionMatrixLocation, false, projectionMatrix);
             gl.uniformMatrix4fv(viewMatrixLocation, false, viewMatrix);
 
             // Render the floor
             gl.uniformMatrix4fv(modelMatrixLocation, false, floorModelMatrix);
+            gl.uniform4f(colorUniformLocation, 0.8, 0.1, 0.1, 1.0); // Red floor
             gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 12 * 2);
 
             // Render the cube (table)
             gl.uniformMatrix4fv(modelMatrixLocation, false, cubeModelMatrix);
+            gl.uniform4f(colorUniformLocation, 0.5, 0.5, 0.5, 1.0); // Gray table
             gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
 
             requestAnimationFrame(render);

@@ -19,6 +19,19 @@ const playerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 const player = new THREE.Mesh(playerGeometry, playerMaterial);
 player.position.y = 0.5;
 scene.add(player);
+// Scene Background
+scene.background = new THREE.Color(0x87ceeb); // Light blue sky
+
+// Add a Grid Helper
+const gridHelper = new THREE.GridHelper(100, 100);
+scene.add(gridHelper);
+
+// Ensure Camera Points to Floor Initially
+camera.position.set(0, 5, 10);
+camera.lookAt(0, 0, 0);
+
+
+
 
 // Position camera
 camera.position.set(0, 2, 5);

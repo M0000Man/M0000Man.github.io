@@ -35,8 +35,9 @@
         layout(location = 0) in vec3 position;
         uniform mat4 projectionMatrix;
         uniform mat4 viewMatrix;
+        uniform mat4 modelMatrix;
         void main() {
-            gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.0);
+            gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
         }
         `;
 
@@ -45,7 +46,7 @@
         precision mediump float;
         out vec4 color;
         void main() {
-            color = vec4(0.2, 0.6, 0.8, 1.0);
+            color = vec4(0.8, 0.3, 0.3, 1.0);
         }
         `;
 
@@ -76,33 +77,34 @@
 
         gl.useProgram(program);
 
-        // Define a simple cube
+        // Define a simple cube and a floor
         const vertices = new Float32Array([
-            // Front face
+            // Cube
             -0.5, -0.5,  0.5,
              0.5, -0.5,  0.5,
              0.5,  0.5,  0.5,
             -0.5,  0.5,  0.5,
-            // Back face
             -0.5, -0.5, -0.5,
              0.5, -0.5, -0.5,
              0.5,  0.5, -0.5,
-            -0.5,  0.5, -0.5
+            -0.5,  0.5, -0.5,
+            // Floor
+            -5.0, -1.0, -5.0,
+             5.0, -1.0, -5.0,
+             5.0, -1.0,  5.0,
+            -5.0, -1.0,  5.0
         ]);
 
         const indices = new Uint16Array([
-            // Front face
+            // Cube
             0, 1, 2,  2, 3, 0,
-            // Back face
             4, 5, 6,  6, 7, 4,
-            // Top face
             3, 2, 6,  6, 7, 3,
-            // Bottom face
             0, 1, 5,  5, 4, 0,
-            // Right face
             1, 2, 6,  6, 5, 1,
-            // Left face
-            0, 3, 7,  7, 4, 0
+            0, 3, 7,  7, 4, 0,
+            // Floor
+            8, 9, 10, 10, 11, 8
         ]);
 
         const vertexBuffer = gl.createBuffer();
@@ -119,12 +121,16 @@
 
         const projectionMatrixLocation = gl.getUniformLocation(program, 'projectionMatrix');
         const viewMatrixLocation = gl.getUniformLocation(program, 'viewMatrix');
+        const modelMatrixLocation = gl.getUniformLocation(program, 'modelMatrix');
 
         const projectionMatrix = mat4.create();
         mat4.perspective(projectionMatrix, Math.PI / 4, canvas.width / canvas.height, 0.1, 100.0);
 
         const viewMatrix = mat4.create();
-        mat4.translate(viewMatrix, viewMatrix, [0, 0, -3]);
+        mat4.translate(viewMatrix, viewMatrix, [0, 0, -6]);
+
+        const cubeModelMatrix = mat4.create();
+        const floorModelMatrix = mat4.create();
 
         function render() {
             gl.clearColor(0.1, 0.1, 0.1, 1.0);
@@ -133,7 +139,14 @@
             gl.uniformMatrix4fv(projectionMatrixLocation, false, projectionMatrix);
             gl.uniformMatrix4fv(viewMatrixLocation, false, viewMatrix);
 
-            gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+            // Render the floor
+            gl.uniformMatrix4fv(modelMatrixLocation, false, floorModelMatrix);
+            gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 12 * 2);
+
+            // Render the cube (table)
+            gl.uniformMatrix4fv(modelMatrixLocation, false, cubeModelMatrix);
+            gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
+
             requestAnimationFrame(render);
         }
 

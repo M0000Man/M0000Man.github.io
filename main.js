@@ -30,9 +30,6 @@ scene.add(gridHelper);
 camera.position.set(0, 5, 10);
 camera.lookAt(0, 0, 0);
 
-
-
-
 // Position camera
 camera.position.set(0, 2, 5);
 
@@ -40,6 +37,8 @@ camera.position.set(0, 2, 5);
 const keys = {};
 document.addEventListener('keydown', (e) => keys[e.key] = true);
 document.addEventListener('keyup', (e) => keys[e.key] = false);
+renderer.setClearColor(0x000000); // Set background to black
+renderer.render(scene, camera);
 
 // Game loop
 function animate() {

@@ -136,6 +136,40 @@
 
         const floorModelMatrix = mat4.create();
 
+        // Mouse control variables
+        let yaw = 0;
+        let pitch = 0;
+        let isPointerLocked = false;
+
+        function updateViewMatrix() {
+            mat4.identity(viewMatrix);
+            mat4.rotateX(viewMatrix, viewMatrix, pitch);
+            mat4.rotateY(viewMatrix, viewMatrix, yaw);
+            mat4.translate(viewMatrix, viewMatrix, [0, 0, -6]);
+        }
+
+        document.addEventListener('click', () => {
+            canvas.requestPointerLock();
+        });
+
+        document.addEventListener('pointerlockchange', () => {
+            isPointerLocked = document.pointerLockElement === canvas;
+        });
+
+        document.addEventListener('mousemove', (event) => {
+            if (isPointerLocked) {
+                const sensitivity = 0.002;
+                yaw += event.movementX * sensitivity;
+                pitch -= event.movementY * sensitivity;
+
+                // Clamp pitch to avoid flipping
+                const maxPitch = Math.PI / 2 - 0.1;
+                pitch = Math.max(-maxPitch, Math.min(maxPitch, pitch));
+
+                updateViewMatrix();
+            }
+        });
+
         function render() {
             gl.clearColor(0.1, 0.1, 0.1, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -157,6 +191,7 @@
             requestAnimationFrame(render);
         }
 
+        updateViewMatrix();
         render();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/gl-matrix@2.8.1/dist/gl-matrix-min.js"></script>

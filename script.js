@@ -4,7 +4,6 @@ scene.background = new THREE.Color(0x87CEEB); // Sky blue
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.y = 1.5; // Eye level
-camera.position.z = 5;
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -41,8 +40,12 @@ let moveRight = false;
 const speed = 0.1;
 
 // Mouse Movement Variables
-let rotationX = 0; // Up/Down rotation
-let rotationY = 0; // Left/Right rotation
+let yaw = 0; // Left/Right rotation
+let pitch = 0; // Up/Down rotation
+const pitchObject = new THREE.Object3D(); // Separate object for pitch
+const yawObject = new THREE.Object3D(); // Separate object for yaw
+yawObject.add(pitchObject); // Nest pitch inside yaw
+yawObject.add(camera); // Add camera to pitchObject
 
 // Pointer Lock API Setup
 const canvas = renderer.domElement;
@@ -64,11 +67,15 @@ document.addEventListener("pointerlockchange", () => {
 // Handle mouse movement
 function onMouseMove(event) {
   const sensitivity = 0.002; // Adjust this for faster/slower mouse movement
-  rotationY -= event.movementX * sensitivity; // Horizontal (left/right) movement
-  rotationX -= event.movementY * sensitivity; // Vertical (up/down) movement
+  yaw -= event.movementX * sensitivity; // Horizontal rotation (yaw)
+  pitch -= event.movementY * sensitivity; // Vertical rotation (pitch)
 
-  // Clamp vertical rotation to prevent flipping
-  rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotationX));
+  // Clamp pitch to avoid flipping (90 degrees up/down)
+  pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
+
+  // Update pitch and yaw object rotations
+  yawObject.rotation.y = yaw;
+  pitchObject.rotation.x = pitch;
 }
 
 // Handle Keyboard Input
@@ -110,30 +117,16 @@ document.addEventListener("keyup", (event) => {
 function animate() {
   requestAnimationFrame(animate);
 
-  // Update camera rotation
-  camera.rotation.x = rotationX;
-  camera.rotation.y = rotationY;
-
   // Handle Player Movement
-  const direction = new THREE.Vector3();
-  camera.getWorldDirection(direction);
+  const forward = new THREE.Vector3(0, 0, -1); // Forward direction in local space
+  const right = new THREE.Vector3(1, 0, 0); // Right direction in local space
+  forward.applyQuaternion(yawObject.quaternion); // Adjust forward direction based on yaw
+  right.applyQuaternion(yawObject.quaternion); // Adjust right direction based on yaw
 
-  // Forward/Backward Movement
-  if (moveForward) {
-    camera.position.addScaledVector(direction, speed);
-  }
-  if (moveBackward) {
-    camera.position.addScaledVector(direction, -speed);
-  }
-
-  // Calculate Right and Left movement relative to the camera's orientation
-  const right = new THREE.Vector3().crossVectors(camera.up, direction).normalize();
-  if (moveLeft) {
-    camera.position.addScaledVector(right, -speed);
-  }
-  if (moveRight) {
-    camera.position.addScaledVector(right, speed);
-  }
+  if (moveForward) yawObject.position.addScaledVector(forward, speed);
+  if (moveBackward) yawObject.position.addScaledVector(forward, -speed);
+  if (moveLeft) yawObject.position.addScaledVector(right, -speed);
+  if (moveRight) yawObject.position.addScaledVector(right, speed);
 
   renderer.render(scene, camera);
 }

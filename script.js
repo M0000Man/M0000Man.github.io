@@ -45,7 +45,8 @@ let pitch = 0; // Up/Down rotation
 const pitchObject = new THREE.Object3D(); // Separate object for pitch
 const yawObject = new THREE.Object3D(); // Separate object for yaw
 yawObject.add(pitchObject); // Nest pitch inside yaw
-yawObject.add(camera); // Add camera to pitchObject
+pitchObject.add(camera); // Add camera to pitchObject
+scene.add(yawObject); // Add yawObject to the scene
 
 // Pointer Lock API Setup
 const canvas = renderer.domElement;

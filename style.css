@@ -1,11 +1,9 @@
-body, html {
+/* Center the game canvas */
+body {
     margin: 0;
     overflow: hidden;
-    height: 100%;
-}
-
-canvas {
+  }
+  canvas {
     display: block;
-    width: 100vw;
-    height: 100vh;
-}
+  }
+  

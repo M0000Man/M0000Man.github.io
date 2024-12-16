@@ -55,10 +55,8 @@ canvas.addEventListener("click", () => {
 // Listen for pointer lock changes
 document.addEventListener("pointerlockchange", () => {
   if (document.pointerLockElement === canvas) {
-    console.log("Pointer locked");
     document.addEventListener("mousemove", onMouseMove);
   } else {
-    console.log("Pointer unlocked");
     document.removeEventListener("mousemove", onMouseMove);
   }
 });
@@ -71,9 +69,6 @@ function onMouseMove(event) {
 
   // Clamp vertical rotation to prevent flipping
   rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotationX));
-
-  // Apply rotations to the camera
-  camera.rotation.set(rotationX, rotationY, 0);
 }
 
 // Handle Keyboard Input
@@ -115,22 +110,28 @@ document.addEventListener("keyup", (event) => {
 function animate() {
   requestAnimationFrame(animate);
 
+  // Update camera rotation
+  camera.rotation.x = rotationX;
+  camera.rotation.y = rotationY;
+
   // Handle Player Movement
   const direction = new THREE.Vector3();
   camera.getWorldDirection(direction);
 
+  // Forward/Backward Movement
   if (moveForward) {
     camera.position.addScaledVector(direction, speed);
   }
   if (moveBackward) {
     camera.position.addScaledVector(direction, -speed);
   }
+
+  // Calculate Right and Left movement relative to the camera's orientation
+  const right = new THREE.Vector3().crossVectors(camera.up, direction).normalize();
   if (moveLeft) {
-    const left = new THREE.Vector3(-direction.z, 0, direction.x);
-    camera.position.addScaledVector(left, speed);
+    camera.position.addScaledVector(right, -speed);
   }
   if (moveRight) {
-    const right = new THREE.Vector3(direction.z, 0, -direction.x);
     camera.position.addScaledVector(right, speed);
   }
 

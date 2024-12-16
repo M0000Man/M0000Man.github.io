@@ -23,17 +23,6 @@ const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
 cube.position.set(0, 0.5, 0); // Place it above the ground
 scene.add(cube);
 
-// Add Tall Green Pillar (for Reference)
-const pillarGeometry = new THREE.CylinderGeometry(0.5, 0.5, 10, 32);
-const pillarMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 }); // Green
-const pillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
-pillar.position.set(5, 5, 0); // Make it tall and visible
-scene.add(pillar);
-
-// Add Grid Helper (for Debugging)
-const gridHelper = new THREE.GridHelper(100, 10);
-scene.add(gridHelper);
-
 // Add Lighting
 const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
 scene.add(ambientLight);
@@ -142,9 +131,6 @@ function animate() {
   if (moveBackward) player.position.addScaledVector(forward, -speed);
   if (moveLeft) player.position.addScaledVector(right, -speed);
   if (moveRight) player.position.addScaledVector(right, speed);
-
-  // Debugging: Log Camera Position
-  console.log(`Camera Position: (${player.position.x.toFixed(2)}, ${player.position.y.toFixed(2)}, ${player.position.z.toFixed(2)})`);
 
   renderer.render(scene, camera);
 }

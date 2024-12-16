@@ -23,6 +23,10 @@ const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
 cube.position.set(0, 0.5, 0); // Place it above the ground
 scene.add(cube);
 
+// Add Grid Helper (for Debugging)
+const gridHelper = new THREE.GridHelper(100, 10);
+scene.add(gridHelper);
+
 // Add Lighting
 const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
 scene.add(ambientLight);
@@ -45,6 +49,9 @@ let pitch = 0; // Up/Down rotation (pitch)
 const player = new THREE.Object3D(); // Player object to encapsulate camera and its orientation
 player.add(camera);
 scene.add(player); // Add player to the scene
+
+// Set Player's Initial Position
+player.position.set(0, 1.5, 5); // Start slightly above the ground and away from the origin
 
 // Pointer Lock API Setup
 const canvas = renderer.domElement;

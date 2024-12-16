@@ -37,21 +37,48 @@ let moveForward = false;
 let moveBackward = false;
 let moveLeft = false;
 let moveRight = false;
-let turnLeft = false;
-let turnRight = false;
 
 const speed = 0.1;
-const turnSpeed = 0.03;
+
+// Mouse Movement Variables
+let rotationX = 0; // Up/Down rotation
+let rotationY = 0; // Left/Right rotation
+
+// Pointer Lock API Setup
+const canvas = renderer.domElement;
+
+// Lock the pointer when clicking the canvas
+canvas.addEventListener("click", () => {
+  canvas.requestPointerLock();
+});
+
+// Listen for pointer lock changes
+document.addEventListener("pointerlockchange", () => {
+  if (document.pointerLockElement === canvas) {
+    console.log("Pointer locked");
+    document.addEventListener("mousemove", onMouseMove);
+  } else {
+    console.log("Pointer unlocked");
+    document.removeEventListener("mousemove", onMouseMove);
+  }
+});
+
+// Handle mouse movement
+function onMouseMove(event) {
+  const sensitivity = 0.002; // Adjust this for faster/slower mouse movement
+  rotationY -= event.movementX * sensitivity; // Horizontal (left/right) movement
+  rotationX -= event.movementY * sensitivity; // Vertical (up/down) movement
+
+  // Clamp vertical rotation to prevent flipping
+  rotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotationX));
+
+  // Apply rotations to the camera
+  camera.rotation.set(rotationX, rotationY, 0);
+}
 
 // Handle Keyboard Input
 document.addEventListener("keydown", (event) => {
   switch (event.code) {
-    case "ArrowLeft":
-      turnLeft = true;
-      break;
-    case "ArrowRight":
-      turnRight = true;
-      break;
     case "KeyW":
       moveForward = true;
       break;
@@ -69,12 +96,6 @@ document.addEventListener("keydown", (event) => {
 
 document.addEventListener("keyup", (event) => {
   switch (event.code) {
-    case "ArrowLeft":
-      turnLeft = false;
-      break;
-    case "ArrowRight":
-      turnRight = false;
-      break;
     case "KeyW":
       moveForward = false;
       break;
@@ -95,16 +116,23 @@ function animate() {
   requestAnimationFrame(animate);
 
   // Handle Player Movement
-  if (moveForward) camera.position.z -= speed * Math.cos(camera.rotation.y);
-  if (moveForward) camera.position.x -= speed * Math.sin(camera.rotation.y);
-  if (moveBackward) camera.position.z += speed * Math.cos(camera.rotation.y);
-  if (moveBackward) camera.position.x += speed * Math.sin(camera.rotation.y);
-  if (moveLeft) camera.position.x -= speed * Math.cos(camera.rotation.y);
-  if (moveLeft) camera.position.z += speed * Math.sin(camera.rotation.y);
-  if (moveRight) camera.position.x += speed * Math.cos(camera.rotation.y);
-  if (moveRight) camera.position.z -= speed * Math.sin(camera.rotation.y);
-  if (turnLeft) camera.rotation.y += turnSpeed;
-  if (turnRight) camera.rotation.y -= turnSpeed;
+  const direction = new THREE.Vector3();
+  camera.getWorldDirection(direction);
+
+  if (moveForward) {
+    camera.position.addScaledVector(direction, speed);
+  }
+  if (moveBackward) {
+    camera.position.addScaledVector(direction, -speed);
+  }
+  if (moveLeft) {
+    const left = new THREE.Vector3(-direction.z, 0, direction.x);
+    camera.position.addScaledVector(left, speed);
+  }
+  if (moveRight) {
+    const right = new THREE.Vector3(direction.z, 0, -direction.x);
+    camera.position.addScaledVector(right, speed);
+  }
 
   renderer.render(scene, camera);
 }

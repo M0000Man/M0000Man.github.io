@@ -40,13 +40,11 @@ let moveRight = false;
 const speed = 0.1;
 
 // Mouse Movement Variables
-let yaw = 0; // Left/Right rotation
-let pitch = 0; // Up/Down rotation
-const pitchObject = new THREE.Object3D(); // Separate object for pitch
-const yawObject = new THREE.Object3D(); // Separate object for yaw
-yawObject.add(pitchObject); // Nest pitch inside yaw
-pitchObject.add(camera); // Add camera to pitchObject
-scene.add(yawObject); // Add yawObject to the scene
+let yaw = 0; // Left/Right rotation (yaw)
+let pitch = 0; // Up/Down rotation (pitch)
+const player = new THREE.Object3D(); // Player object to encapsulate camera and its orientation
+player.add(camera);
+scene.add(player); // Add player to the scene
 
 // Pointer Lock API Setup
 const canvas = renderer.domElement;
@@ -74,9 +72,10 @@ function onMouseMove(event) {
   // Clamp pitch to avoid flipping (90 degrees up/down)
   pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
 
-  // Update pitch and yaw object rotations
-  yawObject.rotation.y = yaw;
-  pitchObject.rotation.x = pitch;
+  // Apply rotations to the player's quaternion
+  const quaternion = new THREE.Quaternion();
+  quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, "YXZ")); // "YXZ" applies yaw first, then pitch
+  player.quaternion.copy(quaternion);
 }
 
 // Handle Keyboard Input
@@ -121,13 +120,14 @@ function animate() {
   // Handle Player Movement
   const forward = new THREE.Vector3(0, 0, -1); // Forward direction in local space
   const right = new THREE.Vector3(1, 0, 0); // Right direction in local space
-  forward.applyQuaternion(yawObject.quaternion); // Adjust forward direction based on yaw
-  right.applyQuaternion(yawObject.quaternion); // Adjust right direction based on yaw
 
-  if (moveForward) yawObject.position.addScaledVector(forward, speed);
-  if (moveBackward) yawObject.position.addScaledVector(forward, -speed);
-  if (moveLeft) yawObject.position.addScaledVector(right, -speed);
-  if (moveRight) yawObject.position.addScaledVector(right, speed);
+  forward.applyQuaternion(player.quaternion); // Adjust forward direction based on player's quaternion
+  right.applyQuaternion(player.quaternion); // Adjust right direction based on player's quaternion
+
+  if (moveForward) player.position.addScaledVector(forward, speed);
+  if (moveBackward) player.position.addScaledVector(forward, -speed);
+  if (moveLeft) player.position.addScaledVector(right, -speed);
+  if (moveRight) player.position.addScaledVector(right, speed);
 
   renderer.render(scene, camera);
 }

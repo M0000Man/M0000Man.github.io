@@ -99,6 +99,12 @@ document.addEventListener("keydown", (event) => {
         case "KeyD":
             moveRight = true;
             break;
+        case "keyArrowUp":
+            sensitivity += 0.01;
+            break;
+        case "keyArrowDown":
+            sensitivity -= 0.01;
+            break;
         case "Space": // Jump when space is pressed
             if (isOnGround()) {
                 velocityY += jumpForce;

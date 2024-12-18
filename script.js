@@ -37,6 +37,7 @@ let moveBackward = false;
 let moveLeft = false;
 let moveRight = false;
 
+let sensitivity = 0.002; // Initial mouse sensitivity
 const speed = 0.1;
 let velocityY = 0; // Vertical velocity for gravity
 const gravity = -0.01; // Gravity force
@@ -71,7 +72,6 @@ document.addEventListener("pointerlockchange", () => {
 
 // Handle mouse movement
 function onMouseMove(event) {
-    const sensitivity = 0.002; // Adjust this for faster/slower mouse movement
     yaw -= event.movementX * sensitivity; // Horizontal rotation (yaw)
     pitch -= event.movementY * sensitivity; // Vertical rotation (pitch)
 
@@ -99,11 +99,13 @@ document.addEventListener("keydown", (event) => {
         case "KeyD":
             moveRight = true;
             break;
-        case "keyArrowUp":
-            sensitivity += 0.01;
+        case "ArrowUp": // Increase sensitivity with up arrow key
+            sensitivity += 0.001; 
+            updateSensitivityDisplay(); // Update display after changing sensitivity
             break;
-        case "keyArrowDown":
-            sensitivity -= 0.01;
+        case "ArrowDown": // Decrease sensitivity with down arrow key
+            sensitivity -= 0.001; 
+            updateSensitivityDisplay(); // Update display after changing sensitivity
             break;
         case "Space": // Jump when space is pressed
             if (isOnGround()) {
@@ -126,13 +128,29 @@ document.addEventListener("keyup", (event) => {
             break;
         case "KeyD":
             moveRight = false;
-            break;
+            break;   
     }
 });
 
 // Check if player is on the ground
 function isOnGround() {
     return player.position.y <= 1.5; // Check if player's y position is at or below ground level
+}
+
+// Create a div element for displaying sensitivity information
+const sensitivityDiv = document.createElement('div');
+sensitivityDiv.style.position = 'absolute';
+sensitivityDiv.style.top = '10px';
+sensitivityDiv.style.left = '10px';
+sensitivityDiv.style.color = 'white';
+sensitivityDiv.style.zIndex = '100';
+sensitivityDiv.innerHTML = `Sensitivity: <span id="sensitivityValue">${sensitivity.toFixed(3)}</span>`;
+document.body.appendChild(sensitivityDiv);
+
+// Function to update the displayed sensitivity value
+function updateSensitivityDisplay() {
+    const sensitivityValueElement = document.getElementById('sensitivityValue');
+    sensitivityValueElement.textContent = sensitivity.toFixed(3);
 }
 
 // Game Loop
